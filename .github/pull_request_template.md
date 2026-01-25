@@ -1,3 +1,14 @@
+## Suggested Title
+
+<!-- Copy this format for your PR title. Include issue number if applicable. -->
+<!-- Examples: "docs: format README and update development setup (#1)" or "feat: add font scaling preview" -->
+
+**Format:** `[type]: [brief description] ([#issue])`
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `build`, `config`
+
+---
+
 ## Description
 
 <!-- Provide a brief description of what this PR does and why it's needed -->
