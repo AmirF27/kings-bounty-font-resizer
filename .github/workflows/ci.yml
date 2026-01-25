@@ -125,10 +125,32 @@ jobs:
       - name: Build MSI
         run: pnpm tauri build --bundles msi
 
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = Get-ChildItem -Path "src-tauri\target" -Recurse -Filter "*.exe" |
+            Where-Object { $_.FullName -match "\\release\\" -and $_.Name -notmatch "d\.exe$" } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $exe) { throw "Could not find release .exe under src-tauri\target" }
+
+          New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+          Copy-Item $exe.FullName "dist\kings-bounty-font-resizer.exe" -Force
+          Compress-Archive -Path "dist\kings-bounty-font-resizer.exe" -DestinationPath "dist\kings-bounty-font-resizer-windows-portable.zip" -Force
+
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-msi
           path: src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload portable ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: dist/*.zip
           if-no-files-found: error
           retention-days: 30
