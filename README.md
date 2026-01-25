@@ -1,7 +1,56 @@
-# Tauri + React + Typescript
+# King's Bounty Font Resizer
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A small desktop utility for King's Bounty: The Legend that safely scales in-game font sizes by modifying the game's configuration files.
 
-## Recommended IDE Setup
+⚠️ **Status:** Work in progress — not released yet.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Motivation
+
+King's Bounty: The Legend does not provide built-in UI or font scaling options. Manually editing font configuration files is possible but tedious and error-prone.
+
+This tool aims to:
+
+- make font scaling quick and repeatable
+- preserve original files via automatic backups
+- provide a simple GUI instead of manual config edits
+
+This is especially useful when playing on smaller screens (such as Steam Deck or similar handheld PCs) or for players who benefit from larger, more readable UI text.
+
+## Planned Features (v1.0)
+
+- Increase / decrease all font sizes by a fixed amount
+- Preview changes before applying them
+- Automatic backup and restore of the original configuration
+- Portable mode: run the app directly from the game folder
+
+## Tech Stack
+
+- **Tauri** — lightweight desktop shell
+- **React + TypeScript** — UI and logic
+- **Rust (Tauri backend)** — filesystem access and safety
+
+## Development Status
+
+This project is currently under active development. Early milestones focus on:
+
+- robust config parsing
+- safe read/write operations
+- a minimal but clear UI
+
+User-facing releases will be published once the core functionality is stable.
+
+## Development Setup
+
+```bash
+# install dependencies
+pnpm install
+
+# run the app in development mode
+pnpm tauri dev
+```
+
+**Note:** Running the app outside the actual game directory during development is expected.
+
+## License
+
+TBD
