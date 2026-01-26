@@ -40,6 +40,7 @@ export default tseslint.config(
       'no-trailing-spaces': 'error',
       'no-multi-spaces': 'error',
       'comma-dangle': ['error', 'always-multiline'],
+      'indent': ['error', 2],
     },
     settings: {
       react: {
