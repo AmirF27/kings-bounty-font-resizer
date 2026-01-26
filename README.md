@@ -48,6 +48,12 @@ pnpm install
 # run the app in development mode
 pnpm tauri dev
 
+# lint the codebase
+pnpm lint
+
+# run type checks
+pnpm exec tsc --noEmit
+
 # run core logic tests (Node environment)
 pnpm test:run
 
