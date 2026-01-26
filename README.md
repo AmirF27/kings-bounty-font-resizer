@@ -47,6 +47,12 @@ pnpm install
 
 # run the app in development mode
 pnpm tauri dev
+
+# run core logic tests (Node environment)
+pnpm test:run
+
+# run UI tests (jsdom; may be empty early on)
+pnpm test:ui
 ```
 
 **Note:** Running the app outside the actual game directory during development is expected.
