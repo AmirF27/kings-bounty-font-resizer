@@ -36,11 +36,15 @@ export default tseslint.config(
           varsIgnorePattern: '^_',
         },
       ],
+      'quotes': ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
+      'no-trailing-spaces': 'error',
+      'no-multi-spaces': 'error',
+      'comma-dangle': ['error', 'always-multiline'],
     },
     settings: {
       react: {
         version: 'detect',
       },
     },
-  }
+  },
 );
