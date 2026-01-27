@@ -111,8 +111,7 @@ jobs:
             const pr = context.payload.pull_request;
             if (!pr) return;
 
-            const action = context.payload.action;
-            if (action !== "opened" && action !== "reopened") return;
+            if (context.payload.action !== "opened") return;
 
             const branch = pr.head.ref; // e.g. "feat/47-parse-and-resize-string-based"
 
