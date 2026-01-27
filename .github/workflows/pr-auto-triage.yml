@@ -12,20 +12,50 @@ jobs:
   auto_triage:
     runs-on: ubuntu-latest
     steps:
-      - name: Auto-assign PR to author
+      - name: Assign PR (prefer issue assignee, fallback to PR author)
         uses: actions/github-script@v7
         with:
           script: |
             const pr = context.payload.pull_request;
             if (!pr) return;
 
-            // Assign PR to the PR author (usually you)
+            // Only on open to avoid fighting manual changes
+            if (context.payload.action !== "opened") return;
+
+            const branch = pr.head.ref;
+            const match = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
+            let assignees = [];
+
+            if (match) {
+              const issueNumber = Number(match[1]);
+
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                });
+
+                if (issue.assignees && issue.assignees.length > 0) {
+                  assignees = issue.assignees.map(a => a.login);
+                }
+              } catch (e) {
+                core.info(`Could not fetch issue #${match[1]} to sync assignees; falling back to PR author.`);
+              }
+            }
+
+            if (assignees.length === 0) {
+              assignees = [pr.user.login];
+            }
+
             await github.rest.issues.addAssignees({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              assignees: [pr.user.login],
+              assignees,
             });
+
+            core.info(`Assigned PR #${pr.number} to: ${assignees.join(", ")}`);
 
       - name: Sync milestone from issue referenced in branch name (e.g. feat/50-*)
         uses: actions/github-script@v7
