@@ -1,0 +1,198 @@
+name: PR Auto Triage
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  auto_triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign PR (prefer issue assignee, fallback to PR author)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            // Only on open to avoid fighting manual changes
+            if (context.payload.action !== "opened") return;
+
+            const branch = pr.head.ref;
+            const match = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
+            let assignees = [];
+
+            if (match) {
+              const issueNumber = Number(match[1]);
+
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                });
+
+                if (issue.assignees && issue.assignees.length > 0) {
+                  assignees = issue.assignees.map(a => a.login);
+                }
+              } catch (e) {
+                core.info(`Could not fetch issue #${match[1]} to sync assignees; falling back to PR author.`);
+              }
+            }
+
+            if (assignees.length === 0) {
+              assignees = [pr.user.login];
+            }
+
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              assignees,
+            });
+
+            core.info(`Assigned PR #${pr.number} to: ${assignees.join(", ")}`);
+
+      - name: Sync milestone from issue referenced in branch name (e.g. feat/50-*)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            const branch = pr.head.ref; // e.g. "feat/50-some-feature"
+            const match = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
+            if (!match) {
+              core.info(`No issue number found in branch name: ${branch}`);
+              return;
+            }
+
+            const issueNumber = Number(match[1]);
+            core.info(`Detected issue number: ${issueNumber}`);
+
+            // Fetch the issue to see which milestone it has
+            let issue;
+            try {
+              const res = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+              });
+              issue = res.data;
+            } catch (e) {
+              core.warning(`Could not fetch issue #${issueNumber}. Does it exist in this repo?`);
+              return;
+            }
+
+            if (!issue.milestone) {
+              core.info(`Issue #${issueNumber} has no milestone. Nothing to sync.`);
+              return;
+            }
+
+            const milestoneNumber = issue.milestone.number;
+            core.info(`Syncing milestone #${milestoneNumber} (${issue.milestone.title}) to PR #${pr.number}`);
+
+            // Set milestone on the PR (PRs are "issues" in GitHub API)
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              milestone: milestoneNumber,
+            });
+
+      - name: Auto-set PR title from branch type + issue title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            // Only run once, when PR is opened
+            if (context.payload.action !== "opened") return;
+
+            const branch = pr.head.ref; // e.g. "feat/500-some-feature"
+
+            // Extract type from prefix before first slash
+            const typeMatch = branch.match(/^([a-zA-Z]+)\//);
+            const type = (typeMatch?.[1] || "chore").toLowerCase();
+
+            // Extract issue number from branch
+            const issueMatch = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
+            if (!issueMatch) {
+              core.info(`No issue number found in branch name: ${branch}`);
+              return;
+            }
+            const issueNumber = Number(issueMatch[1]);
+
+            // Fetch issue title
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            // Decapitalize only the first character (don't lowercase the whole string)
+            const title = issue.title;
+            const decap = title.length ? title[0].toLowerCase() + title.slice(1) : title;
+
+            const newTitle = `${type}: ${decap} (#${issueNumber})`;
+
+            // Only overwrite if PR title is still the default (often equals branch name)
+            if (pr.title === branch) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title: newTitle,
+              });
+              core.info(`Updated PR title to: ${newTitle}`);
+            } else {
+              core.info("PR title was already customized; not overwriting.");
+            }
+
+      - name: Sync labels from linked issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            // Only run when PR is opened
+            if (context.payload.action !== "opened") return;
+
+            const branch = pr.head.ref;
+            const match = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
+            if (!match) {
+              core.info(`No issue number found in branch name: ${branch}`);
+              return;
+            }
+
+            const issueNumber = Number(match[1]);
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            if (!issue.labels || issue.labels.length === 0) {
+              core.info(`Issue #${issueNumber} has no labels.`);
+              return;
+            }
+
+            const labels = issue.labels
+              .map(l => typeof l === "string" ? l : l.name)
+              .filter(name => name.startsWith("type:"));
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels,
+            });
+
+            core.info(`Synced labels from issue #${issueNumber}: ${labels.join(", ")}`);
