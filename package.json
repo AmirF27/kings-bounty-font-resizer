@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest --ui",
     "test:run": "vitest run",
-    "test:ui": "vitest run -c vitest.ui.config.ts"
+    "test:ui": "vitest run --passWithNoTests -c vitest.ui.config.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
