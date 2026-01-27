@@ -1,0 +1,75 @@
+name: PR Auto Triage
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  auto_triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-assign PR to author
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            // Assign PR to the PR author (usually you)
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              assignees: [pr.user.login],
+            });
+
+      - name: Sync milestone from issue referenced in branch name (e.g. feat/50-*)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            const branch = pr.head.ref; // e.g. "feat/50-some-feature"
+            const match = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
+            if (!match) {
+              core.info(`No issue number found in branch name: ${branch}`);
+              return;
+            }
+
+            const issueNumber = Number(match[1]);
+            core.info(`Detected issue number: ${issueNumber}`);
+
+            // Fetch the issue to see which milestone it has
+            let issue;
+            try {
+              const res = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+              });
+              issue = res.data;
+            } catch (e) {
+              core.warning(`Could not fetch issue #${issueNumber}. Does it exist in this repo?`);
+              return;
+            }
+
+            if (!issue.milestone) {
+              core.info(`Issue #${issueNumber} has no milestone. Nothing to sync.`);
+              return;
+            }
+
+            const milestoneNumber = issue.milestone.number;
+            core.info(`Syncing milestone #${milestoneNumber} (${issue.milestone.title}) to PR #${pr.number}`);
+
+            // Set milestone on the PR (PRs are "issues" in GitHub API)
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              milestone: milestoneNumber,
+            });
