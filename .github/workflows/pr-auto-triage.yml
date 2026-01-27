@@ -141,18 +141,21 @@ jobs:
 
             const newTitle = `${type}: ${decap} (#${issueNumber})`;
 
-            // Only overwrite if PR title is still the default (often equals branch name)
-            if (pr.title === branch) {
-              await github.rest.pulls.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-                title: newTitle,
-              });
-              core.info(`Updated PR title to: ${newTitle}`);
-            } else {
+            const branchSuffix = branch.includes("/") ? branch.split("/").pop() : branch;
+            const defaultishTitles = new Set([branch, branchSuffix]);
+
+            if (!defaultishTitles.has(pr.title)) {
               core.info("PR title was already customized; not overwriting.");
+              return;
             }
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              title: newTitle,
+            });
+            core.info(`Updated PR title to: ${newTitle}`);
 
       - name: Sync labels from linked issue
         uses: actions/github-script@v7
