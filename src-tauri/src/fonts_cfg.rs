@@ -46,3 +46,23 @@ pub fn write_fonts_cfg(path: String, content: String) -> Result<(), String> {
     fs::write(&path, bytes).map_err(|e| format!("Failed to write file: {e}"))?;
     Ok(())
 }
+
+#[command]
+pub fn backup_fonts_cfg(path: String) -> Result<(), String> {
+    let backup_path = format!("{path}.bak");
+    fs::copy(&path, &backup_path).map_err(|e| format!("Failed to back up file: {e}"))?;
+    Ok(())
+}
+
+#[command]
+pub fn restore_fonts_cfg(path: String) -> Result<(), String> {
+    let backup_path = format!("{path}.bak");
+
+    if fs::metadata(&path).is_ok() {
+        fs::remove_file(&path).map_err(|e| format!("Failed to remove original file: {e}"))?;
+    }
+
+    fs::copy(&backup_path, &path).map_err(|e| format!("Failed to restore from backup: {e}"))?;
+    
+    Ok(())
+}
