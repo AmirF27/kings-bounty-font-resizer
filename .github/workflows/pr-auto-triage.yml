@@ -123,25 +123,6 @@ jobs:
                 .replace(/\s+/g, " ");
             }
 
-            const branchSuffix = branch.includes("/") ? branch.split("/").pop() : branch;
-
-            const titleNorm = normalize(pr.title);
-            const branchNorm = normalize(branch);
-            const suffixNorm = normalize(branchSuffix);
-
-            core.info(`PR title: "${pr.title}"`);
-            core.info(`Branch: "${branch}"`);
-            core.info(`Normalized title: "${titleNorm}"`);
-            core.info(`Normalized branch: "${branchNorm}"`);
-            core.info(`Normalized suffix: "${suffixNorm}"`);
-
-            const isDefaultish = titleNorm === branchNorm || titleNorm === suffixNorm;
-
-            if (!isDefaultish) {
-              core.info("Title does not look auto-generated; not overwriting.");
-              return;
-            }
-
             // Extract issue number from branch
             const issueMatch = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
             if (!issueMatch) {
