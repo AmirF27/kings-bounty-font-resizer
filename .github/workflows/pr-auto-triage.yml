@@ -1,7 +1,7 @@
 name: PR Auto Triage
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
 
 permissions:
@@ -111,43 +111,60 @@ jobs:
             const pr = context.payload.pull_request;
             if (!pr) return;
 
-            // Only run once, when PR is opened
             if (context.payload.action !== "opened") return;
 
-            const branch = pr.head.ref; // e.g. "feat/500-some-feature"
+            const branch = pr.head.ref; // e.g. "feat/47-parse-and-resize-string-based"
 
-            // Extract type from prefix before first slash
-            const typeMatch = branch.match(/^([a-zA-Z]+)\//);
-            const type = (typeMatch?.[1] || "chore").toLowerCase();
+            function normalize(s) {
+              return s
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, " ")
+                .trim()
+                .replace(/\s+/g, " ");
+            }
+
+            const branchSuffix = branch.includes("/") ? branch.split("/").pop() : branch;
+
+            const titleNorm = normalize(pr.title);
+            const branchNorm = normalize(branch);
+            const suffixNorm = normalize(branchSuffix);
+
+            core.info(`PR title: "${pr.title}"`);
+            core.info(`Branch: "${branch}"`);
+            core.info(`Normalized title: "${titleNorm}"`);
+            core.info(`Normalized branch: "${branchNorm}"`);
+            core.info(`Normalized suffix: "${suffixNorm}"`);
+
+            const isDefaultish = titleNorm === branchNorm || titleNorm === suffixNorm;
+
+            if (!isDefaultish) {
+              core.info("Title does not look auto-generated; not overwriting.");
+              return;
+            }
 
             // Extract issue number from branch
             const issueMatch = branch.match(/(?:^|\/)(\d+)(?:-|$)/);
             if (!issueMatch) {
-              core.info(`No issue number found in branch name: ${branch}`);
+              core.warning(`No issue number found in branch name: ${branch}`);
               return;
             }
             const issueNumber = Number(issueMatch[1]);
 
-            // Fetch issue title
+            // Type from prefix (before slash)
+            const typeMatch = branch.match(/^([a-zA-Z]+)\//);
+            const type = (typeMatch?.[1] || "chore").toLowerCase();
+
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
             });
 
-            // Decapitalize only the first character (don't lowercase the whole string)
-            const title = issue.title;
-            const decap = title.length ? title[0].toLowerCase() + title.slice(1) : title;
+            const issueTitle = issue.title || "";
+            const decap = issueTitle.length ? issueTitle[0].toLowerCase() + issueTitle.slice(1) : issueTitle;
 
             const newTitle = `${type}: ${decap} (#${issueNumber})`;
-
-            const branchSuffix = branch.includes("/") ? branch.split("/").pop() : branch;
-            const defaultishTitles = new Set([branch, branchSuffix]);
-
-            if (!defaultishTitles.has(pr.title)) {
-              core.info("PR title was already customized; not overwriting.");
-              return;
-            }
+            core.info(`Updating PR title to: "${newTitle}"`);
 
             await github.rest.pulls.update({
               owner: context.repo.owner,
@@ -155,7 +172,6 @@ jobs:
               pull_number: pr.number,
               title: newTitle,
             });
-            core.info(`Updated PR title to: ${newTitle}`);
 
       - name: Sync labels from linked issue
         uses: actions/github-script@v7
