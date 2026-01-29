@@ -6,8 +6,14 @@ import os from 'node:os';
 import { FontsCfgIO, FontsCfgService } from './fonts-cfg-service';
 
 const nodeIo: FontsCfgIO = {
-  read: (p: string) => fs.readFile(p, 'utf16le'),
-  write: (p: string, c: string) => fs.writeFile(p, c, 'utf16le'),
+  async read(p) {
+    const buf = await fs.readFile(p);
+    return buf.toString('utf16le');
+  },
+  async write(p, c) {
+    const buf = Buffer.from(c, 'utf16le');
+    await fs.writeFile(p, buf);
+  },
 };
 
 describe('FontsCfgService.resizeInPlace', () => {
