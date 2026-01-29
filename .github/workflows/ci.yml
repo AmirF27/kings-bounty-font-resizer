@@ -103,7 +103,7 @@ jobs:
           workspaces: src-tauri -> target
 
       - name: Run Rust tests
-        run: pnpm test:rust
+        run: cd src-tauri && cargo test
 
 
   build_linux_appimage:
