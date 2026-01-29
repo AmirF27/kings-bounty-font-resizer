@@ -11,8 +11,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest --ui",
-    "test:run": "vitest run",
-    "test:ui": "vitest run --passWithNoTests -c vitest.ui.config.ts"
+    "test:core": "vitest run",
+    "test:ui": "vitest run --passWithNoTests -c vitest.ui.config.ts",
+    "test:rust": "cd src-tauri && cargo test",
+    "test:all": "pnpm test && pnpm test:rust"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

@@ -37,6 +37,7 @@ jobs:
       - name: Typecheck
         run: pnpm exec tsc --noEmit
 
+
   test_core:
     name: Tests
     runs-on: ubuntu-latest
@@ -59,7 +60,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: pnpm test:run
+        run: pnpm test:core
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Run Rust tests (src-tauri)
+        run: cd src-tauri && cargo test
+
 
   test_ui:
     name: UI Tests
@@ -138,6 +151,7 @@ jobs:
           path: src-tauri/target/release/bundle/appimage/*.AppImage
           if-no-files-found: error
           retention-days: 30
+
 
   build_windows_msi:
     name: Build Windows MSI (no NSIS)
