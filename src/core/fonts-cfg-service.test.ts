@@ -92,7 +92,7 @@ describe('FontsCfgService', () => {
   });
 
   describe('restore', () => {
-    it('restores original contents and keeps .bak', async () => {
+    it('restores original contents', async () => {
       const original = await nodeIo.read(tmpFile);
 
       await svc.backup();
@@ -104,9 +104,6 @@ describe('FontsCfgService', () => {
 
       const restored = await nodeIo.read(tmpFile);
       expect(stripBom(restored)).toBe(stripBom(original));
-
-      const bak = await nodeIo.read(`${tmpFile}.bak`);
-      expect(stripBom(bak)).toBe(stripBom(original));
     });
 
     it('deletes .bak after successful restore', async () => {
