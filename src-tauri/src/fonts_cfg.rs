@@ -36,21 +36,35 @@ fn encode_utf16le_with_bom(text: &str) -> Vec<u8> {
 
 #[command]
 pub fn read_fonts_cfg(path: String) -> Result<String, String> {
-    let bytes = fs::read(&path).map_err(|e| format!("Failed to read file: {e}"))?;
-    decode_utf16le(&bytes).map_err(|e| format!("Failed to decode UTF-16LE: {e}"))
+    let bytes = fs::read(&path)
+        .map_err(|e| format!("Failed to read file: {e}"))?;
+
+    decode_utf16le(&bytes)
+        .map_err(|e| format!("Failed to decode UTF-16LE: {e}"))
 }
 
 #[command]
 pub fn write_fonts_cfg(path: String, content: String) -> Result<(), String> {
     let bytes = encode_utf16le_with_bom(&content);
-    fs::write(&path, bytes).map_err(|e| format!("Failed to write file: {e}"))?;
+
+    fs::write(&path, bytes)
+        .map_err(|e| format!("Failed to write file: {e}"))?;
+
     Ok(())
 }
 
 #[command]
 pub fn backup_fonts_cfg(path: String) -> Result<(), String> {
     let backup_path = format!("{path}.bak");
-    fs::copy(&path, &backup_path).map_err(|e| format!("Failed to back up file: {e}"))?;
+
+    // Only create backup if it doesn't already exist
+    if fs::metadata(&backup_path).is_ok() {
+        return Ok(());
+    }
+
+    fs::copy(&path, &backup_path)
+        .map_err(|e| format!("Failed to back up file: {e}"))?;
+
     Ok(())
 }
 
@@ -58,11 +72,18 @@ pub fn backup_fonts_cfg(path: String) -> Result<(), String> {
 pub fn restore_fonts_cfg(path: String) -> Result<(), String> {
     let backup_path = format!("{path}.bak");
 
-    if fs::metadata(&path).is_ok() {
-        fs::remove_file(&path).map_err(|e| format!("Failed to remove original file: {e}"))?;
+    // If no backup exists, return a clear error
+    if fs::metadata(&backup_path).is_err() {
+        return Err("Backup not found. Create a backup first.".to_string());
     }
 
-    fs::copy(&backup_path, &path).map_err(|e| format!("Failed to restore from backup: {e}"))?;
-    
+    // Restore: copy backup back to original (overwrites if original exists)
+    fs::copy(&backup_path, &path)
+        .map_err(|e| format!("Failed to restore from backup: {e}"))?;
+
+    // One-shot restore: delete the backup after successful restore
+    fs::remove_file(&backup_path)
+        .map_err(|e| format!("Failed to remove backup file: {e}"))?;
+
     Ok(())
 }

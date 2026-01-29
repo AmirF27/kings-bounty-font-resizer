@@ -6,19 +6,25 @@ import os from 'node:os';
 import { FontsCfgIO, FontsCfgService } from './fonts-cfg-service';
 
 const nodeIo: FontsCfgIO = {
-  async read(p) {
-    const buf = await fs.readFile(p);
+  async read(path) {
+    const buf = await fs.readFile(path);
     return buf.toString('utf16le');
   },
-  async write(p, c) {
+  async write(path, c) {
     const buf = Buffer.from(c, 'utf16le');
-    await fs.writeFile(p, buf);
+    await fs.writeFile(path, buf);
   },
-  async backup(p) {
-    await fs.copyFile(p, `${p}.bak`);
+  async backup(path) {
+    try {
+      await fs.stat(`${path}.bak`);
+      return; // already exists
+    } catch {
+      await fs.copyFile(path, `${path}.bak`);
+    }
   },
-  async restore(p) {
-    await fs.copyFile(`${p}.bak`, p);
+  async restore(path) {
+    await fs.copyFile(`${path}.bak`, path);
+    await fs.rm(`${path}.bak`);
   },
 };
 
@@ -69,6 +75,20 @@ describe('FontsCfgService', () => {
       const bak = await nodeIo.read(`${tmpFile}.bak`);
       expect(stripBom(bak)).toBe(stripBom(original));
     });
+
+    it('does not overwrite an existing .bak', async () => {
+      const original = await nodeIo.read(tmpFile);
+
+      await svc.backup();
+
+      const sentinel = stripBom(original) + '\nSENTINEL';
+      await nodeIo.write(`${tmpFile}.bak`, sentinel);
+
+      await svc.backup();
+
+      const bakAfter = await nodeIo.read(`${tmpFile}.bak`);
+      expect(stripBom(bakAfter)).toBe(stripBom(sentinel));
+    });
   });
 
   describe('restore', () => {
@@ -88,6 +108,28 @@ describe('FontsCfgService', () => {
       const bak = await nodeIo.read(`${tmpFile}.bak`);
       expect(stripBom(bak)).toBe(stripBom(original));
     });
+
+    it('deletes .bak after successful restore', async () => {
+      const original = await nodeIo.read(tmpFile);
+
+      await svc.backup();
+
+      await nodeIo.write(
+        tmpFile,
+        original.replace(/default=font,(\d+)/, (_, n) => `default=font,${Number(n) + 1}`),
+      );
+
+      await svc.restore();
+
+      const restored = await nodeIo.read(tmpFile);
+      expect(stripBom(restored)).toBe(stripBom(original));
+
+      await expect(fs.stat(`${tmpFile}.bak`)).rejects.toBeTruthy();
+    });
+
+    it('fails with a clear error when no backup exists', async () => {
+      await expect(svc.restore()).rejects.toThrow(/bak|backup|not found/i);
+    });
   });
 
   describe('resizeWithBackup', () => {
@@ -102,5 +144,23 @@ describe('FontsCfgService', () => {
       const updated = await nodeIo.read(tmpFile);
       expect(stripBom(updated)).not.toBe(stripBom(original));
     });
+  });
+
+  it('does not overwrite existing .bak', async () => {
+    const original = await nodeIo.read(tmpFile);
+
+    await svc.resizeWithBackup(2);
+
+    // poison the backup
+    const sentinel = stripBom(original) + '\nSENTINEL';
+    await nodeIo.write(`${tmpFile}.bak`, sentinel);
+
+    await svc.resizeWithBackup(-2);
+
+    const bakAfter = await nodeIo.read(`${tmpFile}.bak`);
+    expect(stripBom(bakAfter)).toBe(stripBom(sentinel));
+
+    const updated = await nodeIo.read(tmpFile);
+    expect(stripBom(updated)).not.toBe(stripBom(original));
   });
 });
