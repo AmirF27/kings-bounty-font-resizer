@@ -57,13 +57,11 @@ pnpm exec tsc --noEmit
 # run core logic tests (Node environment)
 pnpm test:core
 
-# run UI tests (jsdom; may be empty early on)
-pnpm test:ui
+# run UI/React tests (jsdom; may be empty early on)
+pnpm test:react
 
 # run Rust integration tests (Tauri backend)
-cd src-tauri
-cargo test
-cd ..
+pnpm test:rust
 ```
 
 **Note:** Running the app outside the actual game directory during development is expected.

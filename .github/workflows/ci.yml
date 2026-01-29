@@ -39,7 +39,7 @@ jobs:
 
 
   test_core:
-    name: Tests
+    name: Core Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -62,20 +62,9 @@ jobs:
       - name: Run tests
         run: pnpm test:core
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
-
-      - name: Run Rust tests (src-tauri)
-        run: cd src-tauri && cargo test
-
 
   test_ui:
-    name: UI Tests
+    name: UI/React Tests
     runs-on: ubuntu-latest
     needs: lint_and_typecheck
 
@@ -93,8 +82,28 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Run UI tests
-        run: pnpm test:ui
+      - name: Run UI/React tests
+        run: pnpm test:react
+
+
+  test_rust:
+    name: Rust Tests (src-tauri)
+    runs-on: ubuntu-latest
+    needs: lint_and_typecheck
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Run Rust tests
+        run: pnpm test:rust
 
 
   build_linux_appimage:
