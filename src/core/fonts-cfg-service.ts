@@ -6,11 +6,11 @@ export interface FontsCfgIO {
 }
 
 export class FontsCfgService {
-  constructor(private readonly io: FontsCfgIO) {}
+  constructor(private readonly io: FontsCfgIO, private path: string) {}
 
-  async resizeInPlace(path: string, delta: number): Promise<void> {
-    const text = await this.io.read(path);
+  async resize(delta: number): Promise<void> {
+    const text = await this.io.read(this.path);
     const updated = applyDelta(text, delta);
-    await this.io.write(path, updated);
+    await this.io.write(this.path, updated);
   }
 }

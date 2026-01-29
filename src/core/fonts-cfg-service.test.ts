@@ -16,7 +16,7 @@ describe('FontsCfgService.resizeInPlace', () => {
   let tmpFile: string;
 
   beforeEach(async () => {
-    svc = new FontsCfgService(nodeIo);
+    svc = new FontsCfgService(nodeIo, tmpFile);
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kb-fonts-'));
     tmpFile = path.join(tmpDir, 'fonts.cfg');
 
@@ -29,7 +29,7 @@ describe('FontsCfgService.resizeInPlace', () => {
   });
 
   it('writes updated sizes without touching the fixture', async () => {
-    await svc.resizeInPlace(tmpFile, 2);
+    await svc.resize(2);
 
     const updated = await nodeIo.read(tmpFile);
     expect(updated).not.toBe('');
@@ -37,7 +37,7 @@ describe('FontsCfgService.resizeInPlace', () => {
   });
 
   it('supports negative deltas', async () => {
-    await svc.resizeInPlace(tmpFile, -2);
+    await svc.resize(-2);
     const updated = await nodeIo.read(tmpFile);
     expect(updated).toMatch(/default=font,12,1,1,0,0,0/);
   });
