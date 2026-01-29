@@ -8,7 +8,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             fonts_cfg::read_fonts_cfg,
-            fonts_cfg::write_fonts_cfg
+            fonts_cfg::write_fonts_cfg,
+            fonts_cfg::backup_fonts_cfg,
+            fonts_cfg::restore_fonts_cfg
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
