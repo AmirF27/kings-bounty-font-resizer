@@ -28,4 +28,9 @@ export class FontsCfgService {
     await this.backup();
     await this.resize(delta);
   }
+
+  async backupExists(): Promise<boolean> {
+    // TODO: implement
+    return false;
+  }
 }
