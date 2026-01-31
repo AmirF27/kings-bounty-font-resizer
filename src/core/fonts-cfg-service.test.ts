@@ -37,9 +37,9 @@ describe('FontsCfgService', () => {
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kb-fonts-'));
-    tmpFile = path.join(tmpDir, 'fonts.cfg');
+    tmpFile = path.join(tmpDir, 'fonts.fixture.cfg');
 
-    const fixturePath = path.join(process.cwd(), 'fixtures', 'fonts.cfg');
+    const fixturePath = path.join(process.cwd(), 'fixtures', 'fonts.fixture.cfg');
     await fs.copyFile(fixturePath, tmpFile);
 
     svc = new FontsCfgService(nodeIo, tmpFile);

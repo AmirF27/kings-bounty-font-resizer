@@ -15,7 +15,7 @@ fn fixture_path() -> String {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("fixtures")
-        .join("fonts.cfg")
+        .join("fonts.fixture.cfg")
         .to_string_lossy()
         .to_string()
 }
@@ -33,7 +33,7 @@ fn assert_has_utf16le_bom(bytes: &[u8]) {
 #[test]
 fn read_fixture_decodes_utf16le() {
     let tmp = tempdir().unwrap();
-    let tmp_file = tmp.path().join("fonts.cfg");
+    let tmp_file = tmp.path().join("fonts.fixture.cfg");
     fs::copy(fixture_path(), &tmp_file).unwrap();
 
     let text = read_fonts_cfg(tmp_file.to_string_lossy().to_string()).unwrap();
@@ -44,7 +44,7 @@ fn read_fixture_decodes_utf16le() {
 #[test]
 fn write_preserves_utf16le_bom_and_persists_content() {
     let tmp = tempdir().unwrap();
-    let tmp_file = tmp.path().join("fonts.cfg");
+    let tmp_file = tmp.path().join("fonts.fixture.cfg");
     fs::copy(fixture_path(), &tmp_file).unwrap();
 
     let p = tmp_file.to_string_lossy().to_string();
@@ -64,7 +64,7 @@ fn write_preserves_utf16le_bom_and_persists_content() {
 #[test]
 fn backup_is_created_once_and_not_overwritten() {
     let tmp = tempdir().unwrap();
-    let tmp_file = tmp.path().join("fonts.cfg");
+    let tmp_file = tmp.path().join("fonts.fixture.cfg");
     fs::copy(fixture_path(), &tmp_file).unwrap();
 
     let p = tmp_file.to_string_lossy().to_string();
@@ -85,7 +85,7 @@ fn backup_is_created_once_and_not_overwritten() {
 #[test]
 fn restore_restores_and_deletes_backup() {
     let tmp = tempdir().unwrap();
-    let tmp_file = tmp.path().join("fonts.cfg");
+    let tmp_file = tmp.path().join("fonts.fixture.cfg");
     fs::copy(fixture_path(), &tmp_file).unwrap();
 
     let p = tmp_file.to_string_lossy().to_string();
@@ -110,7 +110,7 @@ fn restore_restores_and_deletes_backup() {
 #[test]
 fn restore_errors_when_backup_missing() {
     let tmp = tempdir().unwrap();
-    let tmp_file = tmp.path().join("fonts.cfg");
+    let tmp_file = tmp.path().join("fonts.fixture.cfg");
     fs::copy(fixture_path(), &tmp_file).unwrap();
 
     let p = tmp_file.to_string_lossy().to_string();

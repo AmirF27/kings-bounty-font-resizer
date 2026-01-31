@@ -8,7 +8,7 @@ const MIN_SIZE = 1;
 const MAX_SIZE = 96;
 
 async function readFixture() {
-  const fixturePath = path.join(process.cwd(), 'fixtures', 'fonts.cfg');
+  const fixturePath = path.join(process.cwd(), 'fixtures', 'fonts.fixture.cfg');
   return readFile(fixturePath, 'utf16le');
 }
 
@@ -88,7 +88,7 @@ describe('font-resizer', () => {
     const input = await readFixture();
     const output = applyDelta(input, 1);
 
-    expect(output).toContain('// Fonts {');
+    expect(output).toContain('// Synthetic test fixture');
     expect(output).toContain('Fonts {');
     expect(output).toMatch(/^\s*font\s*=\s*calibri\.ttf\s*$/m);
     expect(output).toMatch(/^\s*ft1_12\s*\{/m);
