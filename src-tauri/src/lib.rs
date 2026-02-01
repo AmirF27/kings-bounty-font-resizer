@@ -10,7 +10,8 @@ pub fn run() {
             fonts_cfg::read_fonts_cfg,
             fonts_cfg::write_fonts_cfg,
             fonts_cfg::backup_fonts_cfg,
-            fonts_cfg::restore_fonts_cfg
+            fonts_cfg::restore_fonts_cfg,
+            fonts_cfg::fonts_cfg_exists
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

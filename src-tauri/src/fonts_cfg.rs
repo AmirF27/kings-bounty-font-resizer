@@ -1,5 +1,6 @@
 use std::fs;
 use std::io;
+use std::path::Path;
 
 use tauri::command;
 
@@ -47,6 +48,12 @@ pub fn read_fonts_cfg(path: String) -> Result<String, String> {
 pub fn write_fonts_cfg(path: String, content: String) -> Result<(), String> {
     let bytes = encode_utf16le_with_bom(&content);
 
+    // Ensure parent dir exists (needed for DEV sandbox paths)
+    if let Some(parent) = Path::new(&path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create parent directory: {e}"))?;
+    }
+
     fs::write(&path, bytes)
         .map_err(|e| format!("Failed to write file: {e}"))?;
 
@@ -86,4 +93,9 @@ pub fn restore_fonts_cfg(path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to remove backup file: {e}"))?;
 
     Ok(())
+}
+
+#[command]
+pub fn fonts_cfg_exists(path: String) -> Result<bool, String> {
+    Ok(fs::metadata(&path).is_ok())
 }
