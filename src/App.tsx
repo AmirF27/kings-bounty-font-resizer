@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import FontSizeStepper from './components/font-size-stepper/font-size-stepper';
 import { Button } from './components/ui/button';
@@ -12,8 +12,13 @@ function App() {
 
   const [delta, setDelta] = useState(2);
   const [ready, setReady] = useState(false);
-  const [busy, setBusy] = useState(false);
+
+  const [applyBusy, setApplyBusy] = useState(false);
+  const [revertBusy, setRevertBusy] = useState(false);
+
   const [status, setStatus] = useState<string | null>(null);
+
+  const busy = useMemo(() => applyBusy || revertBusy, [applyBusy, revertBusy]);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,26 +46,58 @@ function App() {
     };
   }, []);
 
-  async function applyChanges(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus(null);
-
+  function getServiceOrWarn(): FontsCfgService | null {
     const fontsCfg = fontsCfgRef.current;
     if (!fontsCfg) {
       setStatus('Not ready yet.');
-      return;
+      return null;
     }
+    return fontsCfg;
+  }
+
+  async function runAction(opts: {
+    setBusy: (busy: boolean) => void;
+    action: (fontsCfg: FontsCfgService) => Promise<void>;
+    successMessage: string;
+    failureMessage: string;
+  }) {
+    setStatus(null);
+
+    const fontsCfg = getServiceOrWarn();
+    if (!fontsCfg) return;
 
     try {
-      setBusy(true);
-      await fontsCfg.resizeWithBackup(delta);
-      setStatus('Applied successfully.');
+      opts.setBusy(true);
+      await opts.action(fontsCfg);
+      setStatus(opts.successMessage);
     } catch (err) {
       console.error(err);
-      setStatus('Apply failed. Check console/logs.');
+      setStatus(opts.failureMessage);
     } finally {
-      setBusy(false);
+      opts.setBusy(false);
     }
+  }
+
+  async function applyChanges(e: React.FormEvent) {
+    e.preventDefault();
+
+    await runAction({
+      setBusy: setApplyBusy,
+      action: (fontsCfg) => fontsCfg.resizeWithBackup(delta),
+      successMessage: 'Applied successfully.',
+      failureMessage: 'Apply failed. Check console/logs.',
+    });
+  }
+
+  async function revertChanges(e: React.MouseEvent) {
+    e.preventDefault();
+
+    await runAction({
+      setBusy: setRevertBusy,
+      action: (fontsCfg) => fontsCfg.restore(),
+      successMessage: 'Reverted changes successfully.',
+      failureMessage: 'Revert failed. Check console/logs.',
+    });
   }
 
   return (
@@ -69,7 +106,11 @@ function App() {
         <FontSizeStepper value={delta} onChange={setDelta} />
 
         <Button type="submit" disabled={!ready || busy}>
-          {busy ? 'Applying...' : 'Apply Changes'}
+          {applyBusy ? 'Applying...' : 'Apply Changes'}
+        </Button>
+
+        <Button type="button" variant="secondary" onClick={revertChanges} disabled={!ready || busy}>
+          {revertBusy ? 'Reverting...' : 'Revert Changes'}
         </Button>
 
         {status && <div className="text-sm">{status}</div>}
