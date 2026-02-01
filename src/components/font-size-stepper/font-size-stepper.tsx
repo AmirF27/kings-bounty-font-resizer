@@ -17,7 +17,7 @@ const FontSizeStepper: FC<FontStepperProps> = ({ value, onChange }) => {
   }
 
   return (
-    <ButtonGroup>
+    <ButtonGroup className='mx-auto'>
       <Button onClick={(e) => updateDelta(e, value - 1)}>
         <MinusIcon />
       </Button>
