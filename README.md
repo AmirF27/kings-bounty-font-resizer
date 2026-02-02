@@ -2,7 +2,7 @@
 
 A small desktop utility for King's Bounty: The Legend that safely scales in-game font sizes by modifying the game's configuration files.
 
-⚠️ **Status:** Work in progress — not released yet.
+⚠️ **Status:** Early access.
 
 ## Motivation
 
@@ -16,12 +16,27 @@ This tool aims to:
 
 This is especially useful when playing on smaller screens (such as Steam Deck or similar handheld PCs) or for players who benefit from larger, more readable UI text.
 
-## Planned Features (v1.0)
+## Usage (Early Access)
 
-- Increase / decrease all font sizes by a fixed amount
-- Preview changes before applying them
-- Automatic backup and restore of the original configuration
-- Portable mode: run the app directly from the game folder
+1. Navigate to the `data/` subfolder inside your **King’s Bounty: The Legend** installation.
+2. Place the app **next to `fonts.cfg`** (inside the `data/` folder).
+3. Run the app.
+4. Choose a delta (e.g., `+2`) and click **Apply Changes**.
+
+```
+Example layout:
+
+King's Bounty The Legend/
+  data/
+    fonts.cfg
+    kings-bounty-font-resizer.exe
+```
+
+### Backup & Restore
+- On first apply, the app creates `fonts.cfg.bak` (only if it doesn’t already exist).
+- **Revert Changes** copies `fonts.cfg.bak` back to `fonts.cfg` and then removes the backup (one-shot restore).
+
+⚠️ Early access: UI is minimal and there is no file picker / auto-detection yet.
 
 ## Tech Stack
 
