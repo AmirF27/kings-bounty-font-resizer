@@ -38,6 +38,16 @@ King's Bounty The Legend/
 
 ⚠️ Early access: UI is minimal and there is no file picker / auto-detection yet.
 
+### Troubleshooting (GOG Galaxy)
+
+Known issue: If GOG Galaxy is running while this tool applies changes, the next launch from Galaxy may fail until this tool is closed (or Galaxy is restarted).
+
+Workarounds:
+- Preferred: After applying changes, **close this tool** and then launch the game from GOG Galaxy.
+- Alternative: Launch the game **directly from the game executable** (kb.exe) (bypassing GOG Galaxy).
+
+This does not affect the game files themselves; it appears to be a launcher interaction.
+
 ## Tech Stack
 
 - **Tauri** — lightweight desktop shell
